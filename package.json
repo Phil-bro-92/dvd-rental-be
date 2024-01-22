@@ -1,12 +1,28 @@
 {
-  "name": "northwind-be",
-  "version": "1.0.0",
-  "description": "",
-  "main": "sever.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+    "name": "dvd-rental-be",
+    "version": "1.0.0",
+    "description": "",
+    "main": "sever.js",
+    "scripts": {
+        "start": "nodemon server.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Phil-bro-92/dvd-rental-be.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/Phil-bro-92/dvd-rental-be/issues"
+    },
+    "homepage": "https://github.com/Phil-bro-92/dvd-rental-be#readme",
+    "dependencies": {
+        "body-parser": "^1.20.2",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.2",
+        "express": "^4.18.2",
+        "nodemon": "^3.0.3",
+        "pg": "^8.11.3"
+    }
 }
