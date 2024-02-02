@@ -21,6 +21,7 @@ app.use(bodyParser.json());
 
 //Routes
 
+//Get all customers
 app.get("/all-customers", async (req, res, next) => {
     try {
         const client = await pool.connect();
@@ -29,13 +30,14 @@ app.get("/all-customers", async (req, res, next) => {
         const result = await client.query(sql);
         const customers = result.rows;
         client.release();
-        res.json(customers);
+        res.status(200).json(customers);
     } catch (err) {
         console.error("Error executing query", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
+//Search customer by name
 app.post("/search-customers", async (req, res, next) => {
     try {
         const client = await pool.connect();
@@ -44,13 +46,14 @@ app.post("/search-customers", async (req, res, next) => {
         const result = await client.query(sql);
         const customers = result.rows;
         client.release();
-        res.json(customers);
+        res.status(200).json(customers);
     } catch (err) {
         console.error("Error executing query", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
+//Search customer ny id
 app.post("/search-customers-id", async (req, res, next) => {
     try {
         const client = await pool.connect();
@@ -59,13 +62,36 @@ app.post("/search-customers-id", async (req, res, next) => {
         const result = await client.query(sql);
         const customers = result.rows;
         client.release();
-        res.json(customers);
+        res.status(200).json(customers);
     } catch (err) {
         console.error("Error executing query", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
+app.post(`/customer-rentals`, async (req, res) => {
+    try {
+        const client = await pool.connect();
+        let { customerId } = req.body;
+        console.log(customerId);
+
+        let sql = `SELECT * 
+        FROM rental 
+        INNER JOIN inventory ON rental.inventory_id = inventory.inventory_id
+        INNER JOIN film ON inventory.film_id = film.film_id
+        WHERE customer_id = ${customerId}`;
+
+        const result = await client.query(sql);
+        const rentals = result.rows;
+        client.release();
+        res.status(200).json(rentals);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json(err);
+    }
+});
+
+//Port Setup
 const PORT = process.env.PORT || 4000;
 const HOST = "0.0.0.0";
 app.listen(PORT, HOST, () => {
