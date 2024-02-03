@@ -4,6 +4,7 @@ const cors = require("cors");
 require("dotenv").config();
 const bodyParser = require("body-parser");
 const { Pool } = require("pg");
+const { status } = require("init");
 
 //DB Setup
 const pool = new Pool({
@@ -69,6 +70,7 @@ app.post("/search-customers-id", async (req, res, next) => {
     }
 });
 
+//Get rentals by customer
 app.post(`/customer-rentals`, async (req, res) => {
     try {
         const client = await pool.connect();
@@ -88,6 +90,61 @@ app.post(`/customer-rentals`, async (req, res) => {
     } catch (err) {
         console.log(err);
         res.status(500).json(err);
+    }
+});
+
+//Get all cities
+app.get(`/all-cities`, async (req, res) => {
+    try {
+        const client = await pool.connect();
+
+        let sql = `SELECT *
+        FROM public.city`;
+        const result = await client.query(sql);
+        const cities = result.rows;
+
+        client.release();
+        res.status(200).json(cities);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json(err);
+    }
+});
+
+//Create a new customer
+app.post(`/new-customer`, async (req, res) => {
+    try {
+        const client = await pool.connect();
+        let customer = req.body;
+        let addressSql = `INSERT INTO public.address(
+            address, address2, city_id, postal_code, phone )
+            VALUES ( '${customer.address}', '${customer.address2}', ${customer.city}, '${customer.postal_code}', '${customer.phone}' ) returning address_id`;
+
+        await client
+            .query(addressSql)
+            .then(async (resp) => {
+                console.log(resp.rows.address_id);
+                const address_id = resp.rows[0].address_id;
+                let customerSql = `INSERT INTO public.customer(
+                    store_id, first_name, last_name, email, address_id)
+                    VALUES ( ${customer.store_id}, '${customer.first_name}', '${customer.last_name}', '${customer.email}', ${address_id})`;
+                console.log(customerSql);
+                await client
+                    .query(customerSql)
+                    .then((resp) => {
+                        console.log("Customer created");
+                    })
+                    .catch((err) => console.log(err));
+            })
+            .catch((err) => console.log(err));
+
+        console.log(req.body);
+        console.log(addressSql);
+
+        res.status(201);
+    } catch (err) {
+        console.log(err);
+        res.status(500);
     }
 });
 
