@@ -6,7 +6,6 @@ require("dotenv").config();
 const bodyParser = require("body-parser");
 const { Pool } = require("pg");
 const bcrypt = require("bcrypt");
-const { status } = require("init");
 const Postal = require("@atech/postal");
 let postalClient = new Postal.Client(
     "https://postal.yourdomain.com",
