@@ -5,6 +5,7 @@ const cors = require("cors");
 require("dotenv").config();
 const bodyParser = require("body-parser");
 const { Pool } = require("pg");
+const bcrypt = require("bcrypt");
 const { status } = require("init");
 const Postal = require("@atech/postal");
 let postalClient = new Postal.Client(
@@ -32,6 +33,7 @@ app.use(bodyParser.json());
 app.post(`/login`, async (req, res) => {
     try {
         const body = req.body;
+        console.log(body);
         const client = await pool.connect();
         let checkExistsSQL = `SELECT *
         FROM staff WHERE email = '${body.email}'`;
@@ -40,7 +42,18 @@ app.post(`/login`, async (req, res) => {
             .query(checkExistsSQL)
             .then(async (resp) => {
                 if (resp.rows.length > 0) {
-                    if (!bycyprtresp.rows[0].password) {
+                    console.log("here");
+                    console.log(resp.rows[0].password);
+                    console.log(body.password);
+                    const isMatch = await bcrypt.compare(
+                        resp.rows[0].password,
+                        body.password
+                    );
+                    console.log(isMatch);
+                    if (isMatch) {
+                        res.status(200).json({ message: "Successful login" });
+                    } else {
+                        res.status(401).json({ message: "Not authorized" });
                     }
                 } else {
                     res.status(204).json({ message: "User does not exist" });
