@@ -5,7 +5,9 @@ const cors = require("cors");
 require("dotenv").config();
 const bodyParser = require("body-parser");
 const { Pool } = require("pg");
-const bcrypt = require("bcrypt");
+const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
+
 const Postal = require("@atech/postal");
 let postalClient = new Postal.Client(
     "https://postal.yourdomain.com",
@@ -32,25 +34,36 @@ app.use(bodyParser.json());
 app.post(`/login`, async (req, res) => {
     try {
         const body = req.body;
-        console.log(body);
+
         const client = await pool.connect();
         let checkExistsSQL = `SELECT *
         FROM staff WHERE email = '${body.email}'`;
-
         await client
             .query(checkExistsSQL)
             .then(async (resp) => {
                 if (resp.rows.length > 0) {
-                    console.log("here");
-                    console.log(resp.rows[0].password);
-                    console.log(body.password);
-                    const isMatch = await bcrypt.compare(
-                        resp.rows[0].password,
-                        body.password
-                    );
-                    console.log(isMatch);
+                    const isMatch = body.password === resp.rows[0].password;
+
                     if (isMatch) {
-                        res.status(200).json({ message: "Successful login" });
+                        const { password, ...user } = resp.rows[0];
+
+                        jwt.sign(
+                            { user },
+                            crypto.randomBytes(32).toString("hex"),
+                            { expiresIn: "1h" },
+                            (err, newToken) => {
+                                if (err) {
+                                    res.status(500).json({
+                                        error: "Failed to generate token",
+                                    });
+                                } else {
+                                    res.status(200).json({
+                                        user: user,
+                                        token: newToken,
+                                    });
+                                }
+                            }
+                        );
                     } else {
                         res.status(401).json({ message: "Not authorized" });
                     }
@@ -59,7 +72,8 @@ app.post(`/login`, async (req, res) => {
                 }
             })
             .catch((err) => {
-                console.log(err);
+                console.error("Error:", err);
+                res.status(500).json({ message: "Internal Server Error" });
             });
     } catch (err) {
         console.error("Error executing query", err);
@@ -121,7 +135,6 @@ app.post(`/customer-rentals`, async (req, res) => {
         const client = await pool.connect();
         let { customerId } = req.body;
         console.log(customerId);
-
         let sql = `SELECT * 
         FROM rental 
         INNER JOIN inventory ON rental.inventory_id = inventory.inventory_id
@@ -175,12 +188,11 @@ app.post(`/new-customer`, async (req, res) => {
                     await client
                         .query(addressSql)
                         .then(async (resp) => {
-                            console.log(resp.rows.address_id);
                             const address_id = resp.rows[0].address_id;
                             let customerSql = `INSERT INTO public.customer(
                                 store_id, first_name, last_name, email, address_id)
                                 VALUES ( ${customer.store_id}, '${customer.first_name}', '${customer.last_name}', '${customer.email}', ${address_id})`;
-                            console.log(customerSql);
+
                             await client
                                 .query(customerSql)
                                 .then((resp) => {
